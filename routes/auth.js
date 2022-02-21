@@ -4,6 +4,7 @@ const router = require('express').Router();
 
 const User = require('../models/User'); 
 const CryptoJS = require("crypto-js"); // crypt the password
+const jwt = require('jsonwebtoken');
 
 //register
 router.post("/register", async (req, res) => {
@@ -32,7 +33,16 @@ router.post("/login",async (req, res) => {
 
         originalPassword !== req.body.password && res.status(401).json("Wrong Credentials");
         const {password, ...others} = user._doc;    // others means : bring all the stuff except password
-        res.status(200).json(others);              //and for _doc cuz mongodb store the document inside doc folder 
+
+        const accessToken = jwt.sign(
+        {       // we're making jwt to verify the user 
+            id: user._id,
+            isAdmin:user.isAdmin                    // we have to keep this to check if user is admin only he can delete the product 
+        },
+         SECRET_KEY = process.env.jwt_SEC,
+        {expiresIn:"3d"}
+        )
+        res.status(200).json({...others, accessToken});              //and for _doc cuz mongodb store the document inside doc folder 
 
     } catch (error) {
         res.status(500).json(error)
